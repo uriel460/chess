@@ -4,6 +4,7 @@ let state = Engine.initBoard();
 
 UI.init();
 UI.render(state);
+Editor.init();
 
 UI.onMove((from, to, promotion) => {
   state = Engine.applyMove(state, from, to, promotion);
