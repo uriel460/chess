@@ -186,6 +186,19 @@ body {
 }
 #new-game-btn:hover { background: #c0392b; }
 
+#setup-mode-btn {
+  padding: 10px;
+  background: #2980b9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#setup-mode-btn:hover { background: #21618c; }
+
 /* ── Modal de promoção ────────────────────────────────────────────────────── */
 #promotion-overlay {
   position: fixed;
@@ -234,3 +247,127 @@ body {
   background: #1a5276;
   border-color: #888;
 }
+
+/* ── Editor de posição ────────────────────────────────────────────────────── */
+#setup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#setup-overlay.hidden { display: none; }
+
+#setup-panel {
+  background: #16213e;
+  border: 2px solid #444;
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#setup-panel h2 {
+  font-size: 18px;
+  color: #e0e0e0;
+}
+
+#setup-body {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+#editor-board {
+  display: grid;
+  grid-template-columns: repeat(8, 56px);
+  grid-template-rows: repeat(8, 56px);
+  border: 2px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+  user-select: none;
+}
+
+#editor-board .piece { font-size: 36px; }
+
+#setup-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 200px;
+}
+
+#piece-palette {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.palette-piece {
+  font-size: 28px;
+  background: #0f3460;
+  border: 2px solid #444;
+  border-radius: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.palette-piece:hover   { background: #1a5276; border-color: #888; }
+.palette-piece.selected { border-color: #f6f669; background: #1a5276; }
+
+#turn-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.turn-btn {
+  flex: 1;
+  padding: 8px;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 2px solid #444;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.turn-btn:hover  { background: #1a5276; }
+.turn-btn.active { border-color: #f6f669; background: #1a5276; }
+
+#setup-error {
+  font-size: 13px;
+  color: #e74c3c;
+  min-height: 18px;
+  text-align: center;
+}
+
+#setup-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#setup-actions button {
+  padding: 10px;
+  background: #0f3460;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#setup-actions button:hover { background: #1a5276; }
+
+#start-position-btn { background: #27ae60; }
+#start-position-btn:hover { background: #1e8449; }

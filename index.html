@@ -26,6 +26,7 @@
       </div>
 
       <button id="new-game-btn">Nova Partida</button>
+      <button id="setup-mode-btn">Editar Posição</button>
     </aside>
   </div>
 
@@ -37,8 +38,38 @@
     </div>
   </div>
 
+  <!-- Editor de posição -->
+  <div id="setup-overlay" class="hidden">
+    <div id="setup-panel">
+      <h2>Editar Posição</h2>
+
+      <div id="setup-body">
+        <div id="editor-board"></div>
+
+        <div id="setup-side">
+          <div id="piece-palette"></div>
+
+          <div id="turn-selector">
+            <button class="turn-btn" data-turn="white">Brancas jogam</button>
+            <button class="turn-btn" data-turn="black">Pretas jogam</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="setup-error"></div>
+
+      <div id="setup-actions">
+        <button id="clear-board-btn">Limpar Tabuleiro</button>
+        <button id="reset-board-btn">Posição Inicial</button>
+        <button id="cancel-setup-btn">Cancelar</button>
+        <button id="start-position-btn">Iniciar Partida</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/engine.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/editor.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
