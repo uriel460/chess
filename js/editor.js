@@ -74,7 +74,7 @@ const Editor = (() => {
     for (const color of ['white', 'black']) {
       for (const type of PIECE_TYPES) {
         const btn = document.createElement('button');
-        btn.className   = 'palette-piece';
+        btn.className   = `palette-piece piece-${color}`;
         btn.textContent = SYMBOLS[color][type];
         btn.title       = `${type} (${color})`;
         btn.addEventListener('click', () => selectPaletteItem(type, color, btn));
