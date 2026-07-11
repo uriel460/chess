@@ -19,12 +19,18 @@ const Editor = (() => {
   const paletteEl    = document.getElementById('piece-palette');
   const setupModeBtn = document.getElementById('setup-mode-btn');
   const cancelBtn    = document.getElementById('cancel-setup-btn');
+  const turnBtns     = document.querySelectorAll('.turn-btn');
+  const clearBtn     = document.getElementById('clear-board-btn');
+  const resetBtn     = document.getElementById('reset-board-btn');
+  const startBtn     = document.getElementById('start-position-btn');
+  const errorEl      = document.getElementById('setup-error');
 
   // ── Internal state ────────────────────────────────────────────────────────
 
   let editorBoard          = Engine.createEmptyBoard();
   let editorTurn           = 'white';
   let selectedPalettePiece = null; // { type, color } or null
+  let onStartCb            = null; // callback(board, turn)
 
   // ── Board rendering ───────────────────────────────────────────────────────
 
@@ -93,12 +99,61 @@ const Editor = (() => {
     }
   }
 
+  // ── Turn selector ─────────────────────────────────────────────────────────
+
+  function renderTurnSelector() {
+    turnBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.turn === editorTurn));
+  }
+
+  function selectTurn(turn) {
+    editorTurn = turn;
+    renderTurnSelector();
+  }
+
+  // ── Board actions ─────────────────────────────────────────────────────────
+
+  function clearBoard() {
+    editorBoard = Engine.createEmptyBoard();
+    clearError();
+    renderEditorBoard();
+  }
+
+  function resetToInitialPosition() {
+    editorBoard = Engine.initBoard().board;
+    clearError();
+    renderEditorBoard();
+  }
+
+  function handleStart() {
+    const validation = Engine.validateSetupPosition(editorBoard, editorTurn);
+    if (!validation.valid) {
+      showError(validation.reason);
+      return;
+    }
+    hide();
+    if (onStartCb) onStartCb(editorBoard, editorTurn);
+  }
+
+  // ── Error message ─────────────────────────────────────────────────────────
+
+  function showError(message) {
+    errorEl.textContent = message;
+  }
+
+  function clearError() {
+    errorEl.textContent = '';
+  }
+
   // ── Show / hide ───────────────────────────────────────────────────────────
 
   function show() {
     editorBoard          = Engine.createEmptyBoard();
     editorTurn           = 'white';
     selectedPalettePiece = null;
+    paletteEl.querySelectorAll('.palette-piece.selected')
+      .forEach(el => el.classList.remove('selected'));
+    clearError();
+    renderTurnSelector();
     overlayEl.classList.remove('hidden');
     renderEditorBoard();
   }
@@ -111,10 +166,19 @@ const Editor = (() => {
 
   function init() {
     renderPalette();
+    renderTurnSelector();
     setupModeBtn.addEventListener('click', show);
     cancelBtn.addEventListener('click', hide);
+    turnBtns.forEach(btn => btn.addEventListener('click', () => selectTurn(btn.dataset.turn)));
+    clearBtn.addEventListener('click', clearBoard);
+    resetBtn.addEventListener('click', resetToInitialPosition);
+    startBtn.addEventListener('click', handleStart);
   }
 
-  return { init, show, hide };
+  function onStartFromPosition(callback) {
+    onStartCb = callback;
+  }
+
+  return { init, show, hide, onStartFromPosition };
 
 })();
