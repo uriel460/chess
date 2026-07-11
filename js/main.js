@@ -19,3 +19,10 @@ UI.onNewGame(() => {
   UI.resetSelection();
   UI.render(state);
 });
+
+Editor.onStartFromPosition((board, turn) => {
+  state = Engine.createCustomState(board, turn);
+  UI.setLastMove(null, null);
+  UI.resetSelection();
+  UI.render(state);
+});
