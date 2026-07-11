@@ -1,0 +1,236 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* ── Board wrapper (tabuleiro + coordenadas) ──────────────────────────────── */
+#board-wrapper {
+  display: grid;
+  grid-template-areas:
+    "ranks board"
+    ".     files";
+  grid-template-columns: 20px auto;
+  grid-template-rows: auto 20px;
+  gap: 4px;
+}
+
+#rank-labels {
+  grid-area: ranks;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  text-align: right;
+  padding-right: 4px;
+  font-size: 12px;
+  color: #888;
+}
+
+#file-labels {
+  grid-area: files;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  font-size: 12px;
+  color: #888;
+}
+
+/* ── Tabuleiro ────────────────────────────────────────────────────────────── */
+#board {
+  grid-area: board;
+  display: grid;
+  grid-template-columns: repeat(8, 70px);
+  grid-template-rows: repeat(8, 70px);
+  border: 2px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.1s;
+}
+
+.square.light { background: #f0d9b5; }
+.square.dark  { background: #b58863; }
+
+/* Highlights */
+.square.selected        { background: #f6f669 !important; }
+.square.last-from,
+.square.last-to         { background: #cdd26a !important; }
+.square.in-check        { background: #e74c3c !important; }
+
+/* Ponto verde nos destinos legais */
+.square.legal-move::after {
+  content: '';
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Anel verde quando o destino tem uma captura */
+.square.legal-capture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 4px solid rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ── Peças ────────────────────────────────────────────────────────────────── */
+.piece {
+  font-size: 46px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.piece-white {
+  color: #fff;
+  text-shadow: 0 0 2px #000, 0 1px 4px rgba(0,0,0,0.8);
+}
+
+.piece-black {
+  color: #1a1a1a;
+  text-shadow: 0 0 2px #fff, 0 1px 4px rgba(255,255,255,0.6);
+}
+
+/* ── Painel lateral ───────────────────────────────────────────────────────── */
+#panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 200px;
+  padding-top: 4px;
+}
+
+#turn-indicator {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  background: #16213e;
+}
+
+#status-message {
+  font-size: 14px;
+  text-align: center;
+  min-height: 20px;
+  color: #f39c12;
+  font-weight: 600;
+}
+
+#history-box {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 440px;
+  background: #16213e;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+#history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+}
+
+#history-table th {
+  color: #888;
+  text-align: left;
+  padding: 2px 6px;
+  border-bottom: 1px solid #333;
+}
+
+#history-table td {
+  padding: 2px 6px;
+  color: #ccc;
+}
+
+#history-table tr:hover td { background: #1f3460; }
+
+#new-game-btn {
+  padding: 10px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#new-game-btn:hover { background: #c0392b; }
+
+/* ── Modal de promoção ────────────────────────────────────────────────────── */
+#promotion-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#promotion-overlay.hidden { display: none; }
+
+#promotion-modal {
+  background: #16213e;
+  border: 2px solid #444;
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+#promotion-modal p {
+  margin-bottom: 16px;
+  font-size: 15px;
+  color: #ccc;
+}
+
+#promotion-choices {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.promo-btn {
+  font-size: 48px;
+  background: #0f3460;
+  border: 2px solid #444;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+
+.promo-btn:hover {
+  background: #1a5276;
+  border-color: #888;
+}

@@ -1,3 +1,58 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Running the project
+
+Open `index.html` directly in a browser — no build step, no server, no dependencies. All logic is vanilla JS loaded via `<script>` tags in order: `engine.js` → `ui.js` → `main.js`.
+
+## Architecture
+
+Three modules with strict layering — `engine.js` has no DOM access, `ui.js` calls Engine but never mutates state directly, `main.js` owns the single mutable `state` reference and wires the two together.
+
+```
+engine.js  →  pure chess logic, returns new state objects (immutable pattern)
+ui.js      →  DOM rendering + event handling, calls Engine for move validation
+main.js    →  holds `state`, passes it to UI.render(), handles onMove/onNewGame callbacks
+```
+
+### Board coordinate system
+
+`board[row][col]` where `row 0 = rank 8 (black back rank)`, `row 7 = rank 1 (white back rank)`. Columns: `0=a … 7=h`. All Engine functions use `[row, col]` pairs, never algebraic notation internally.
+
+### Engine state shape
+
+```js
+{
+  board: Array(8)[Array(8)],        // null or { type, color }
+  turn: 'white' | 'black',
+  castlingRights: { white: { kingside, queenside }, black: { kingside, queenside } },
+  enPassantTarget: [row, col] | null,
+  halfMoveClock: number,
+  fullMoveNumber: number,
+  history: string[],                // SAN strings
+}
+```
+
+State is never mutated — `applyMove` and `applyMoveRaw` always clone via `cloneState()` before modifying.
+
+### Key Engine internals
+
+- `getPseudoLegalMoves` — generates candidate moves without checking if they leave the king in check
+- `getLegalMoves` — filters pseudo-legal moves through `isInCheck` on the resulting state; also validates castling path safety
+- `applyMoveRaw` — low-level board mutation used internally for check detection (skips history/clock updates)
+- `applyMove` — full move application: updates en passant target, castling rights, clocks, SAN history, switches turn
+
+### UI highlights system
+
+CSS classes added to square `<div>` elements: `selected` (yellow), `legal-move` (green dot), `legal-capture` (green ring), `last-from`/`last-to` (blue), `in-check` (red). The board is fully re-rendered on each `render()` call — no incremental updates.
+
+### Testing scenarios (manual)
+
+Scholar's Mate tests checkmate path: `1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6?? 4.Qxf7#`. Also verify: en passant (capture only on the immediate next turn), queenside/kingside castling, pawn promotion modal, stalemate detection.
+
+---
+
 ## Git workflow
 
 - Ao concluir uma tarefa do PLANNING.md e eu confirmar que está OK, faça um commit com mensagem clara e específica (ex: "feat: adiciona validação de movimento do cavalo").

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xadrez</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="board-wrapper">
+      <div id="rank-labels" class="labels"></div>
+      <div id="board"></div>
+      <div id="file-labels" class="labels"></div>
+    </div>
+
+    <aside id="panel">
+      <div id="turn-indicator"></div>
+      <div id="status-message"></div>
+
+      <div id="history-box">
+        <table id="history-table">
+          <thead><tr><th>#</th><th>Brancas</th><th>Pretas</th></tr></thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+
+      <button id="new-game-btn">Nova Partida</button>
+    </aside>
+  </div>
+
+  <!-- Modal de promoção -->
+  <div id="promotion-overlay" class="hidden">
+    <div id="promotion-modal">
+      <p>Promover peão para:</p>
+      <div id="promotion-choices"></div>
+    </div>
+  </div>
+
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
