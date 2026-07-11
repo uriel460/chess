@@ -4,16 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the project
 
-Open `index.html` directly in a browser — no build step, no server, no dependencies. All logic is vanilla JS loaded via `<script>` tags in order: `engine.js` → `ui.js` → `main.js`.
+Open `index.html` directly in a browser — no build step, no server, no dependencies. All logic is vanilla JS loaded via `<script>` tags in order: `engine.js` → `ui.js` → `editor.js` → `main.js`.
 
 ## Architecture
 
-Three modules with strict layering — `engine.js` has no DOM access, `ui.js` calls Engine but never mutates state directly, `main.js` owns the single mutable `state` reference and wires the two together.
+Four modules with strict layering — `engine.js` has no DOM access, `ui.js` and `editor.js` call Engine but never mutate state directly, `main.js` owns the single mutable `state` reference and wires everything together.
 
 ```
 engine.js  →  pure chess logic, returns new state objects (immutable pattern)
-ui.js      →  DOM rendering + event handling, calls Engine for move validation
-main.js    →  holds `state`, passes it to UI.render(), handles onMove/onNewGame callbacks
+ui.js      →  DOM rendering + event handling for normal play, calls Engine for move validation
+editor.js  →  DOM rendering + event handling for the position-setup mode (piece palette, board editing);
+              sibling to ui.js — calls Engine directly, never calls into UI, and UI never calls into it
+main.js    →  holds `state`, passes it to UI.render(), handles onMove/onNewGame/Editor.onStartFromPosition callbacks
 ```
 
 ### Board coordinate system
@@ -57,6 +59,8 @@ Scholar's Mate tests checkmate path: `1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6?? 4.Qxf7#`. Al
 
 - Ao concluir uma tarefa do PLANNING.md e eu confirmar que está OK, faça um commit com mensagem clara e específica (ex: "feat: adiciona validação de movimento do cavalo").
 - NÃO faça commit automaticamente sem eu revisar e aprovar a mudança primeiro.
+- Antes de cada commit, eu preciso ter testado a etapa manualmente no navegador e confirmado explicitamente que funciona (ex: "testei, funciona bem"). Não presuma que está OK só porque o código não tem erros óbvios ou "parece certo" — sempre aguarde minha confirmação de teste real antes de commitar.
+- Se eu pedir uma lista de casos de teste para uma etapa, forneça-a antes de eu testar, mas ainda assim só commite depois da minha confirmação.
 - NÃO dê git push a menos que eu peça explicitamente.
 - Nunca faça commit de código que não roda ou está com erro conhecido.
 - Cada commit deve corresponder a uma única etapa do PLANNING.md — evite juntar múltiplas tarefas num commit só.
