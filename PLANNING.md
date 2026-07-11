@@ -1,129 +1,119 @@
-# Plano: Jogo de Xadrez — Fase 1 (Tabuleiro + 2 Jogadores Locais)
+# Plano: Jogo de Xadrez — Fase 2 (Editor de Posição)
 
 ## Contexto
 
-Criar um jogo de xadrez para web (HTML/CSS/JS puro) jogável no navegador sem instalação, com arquitetura separada entre lógica e interface para facilitar escalonamento futuro (IA, multiplayer, análise).
+A Fase 1 (tabuleiro + 2 jogadores locais, roque, en passant, promoção, xeque-mate/stalemate) está completa. Nova necessidade: permitir montar livremente uma posição no tabuleiro (colocar/remover peças, escolher de quem é a vez) e continuar uma partida normal a partir dali — sem depender de FEN, apenas edição visual via paleta de peças.
+
+Decisões de design:
+- **Interação**: paleta lateral com as 12 peças (6 tipos × 2 cores). Clicar numa peça da paleta a "seleciona"; clicar numa casa do tabuleiro coloca essa peça lá (sobrescrevendo o que houver). Clicar numa casa ocupada sem nenhuma peça selecionada na paleta remove a peça daquela casa.
+- **Estado inicial do editor**: sempre abre com tabuleiro vazio.
+- Sem importação/exportação de FEN — fora de escopo.
+- Sem input manual de direitos de roque — são derivados automaticamente da posição de reis/torres.
 
 ---
 
-## Estrutura de Arquivos
+## Estrutura de Arquivos (adição)
 
 ```
 Game/
-├── index.html          # Shell HTML: carrega CSS e JS, define o layout
+├── index.html          # + botão "Editar Posição" + painel #setup-panel
 ├── css/
-│   └── style.css       # Tabuleiro, peças, highlights, modal de promoção
+│   └── style.css       # + estilos do painel/paleta do editor
 └── js/
-    ├── engine.js       # Lógica pura de xadrez (sem DOM)
-    ├── ui.js           # Renderização e eventos do DOM
-    └── main.js         # Ponto de entrada: conecta engine ↔ ui
+    ├── engine.js       # + createEmptyBoard, createCustomState, validateSetupPosition
+    ├── ui.js           # inalterado
+    ├── editor.js       # NOVO — renderização/interação do modo de edição de posição
+    └── main.js         # + wiring do Editor
 ```
 
-> **Por que separar engine de ui?** Quando chegarmos na Fase 2 (IA com Stockfish), o engine.js já estará pronto para ser chamado diretamente sem tocar na UI.
+> **Por que um módulo `editor.js` separado?** `ui.js` já é 100% dedicado ao jogo normal (renderBoard, handleClick, promoção). Colocar a lógica do editor ali quase dobraria o arquivo e misturaria duas responsabilidades. `editor.js` é um módulo irmão de `ui.js`: chama `Engine` diretamente, nunca depende de `ui.js`. Ordem dos scripts: `engine.js` → `ui.js` → `editor.js` → `main.js`.
 
 ---
 
-## engine.js — Lógica Pura
-
-Responsabilidades (sem acesso ao DOM):
-
-### Estado do jogo
-- `board[8][8]` — matriz representando o tabuleiro (null ou `{type, color}`)
-- `turn` — `'white'` | `'black'`
-- `castlingRights` — `{ white: {kingside, queenside}, black: {kingside, queenside} }`
-- `enPassantTarget` — casa alvo (ou null)
-- `halfMoveClock`, `fullMoveNumber` — para regras de empate
-- `history` — lista de movimentos em notação algébrica
-
-### Funções principais
+## engine.js — novas funções puras
 
 | Função | Descrição |
 |--------|-----------|
-| `initBoard()` | Retorna estado inicial |
-| `getLegalMoves(state, from)` | Retorna array de casas de destino válidas para a peça em `from` |
-| `applyMove(state, from, to, promotion?)` | Retorna novo estado após mover |
-| `isInCheck(state, color)` | Bool |
-| `isCheckmate(state, color)` | Bool |
-| `isStalemate(state, color)` | Bool |
-| `getGameStatus(state)` | `'playing'` \| `'check'` \| `'checkmate'` \| `'stalemate'` |
+| `createEmptyBoard()` | Retorna board 8×8 todo `null` |
+| `createCustomState(board, turn)` | Monta state completo a partir de board arbitrário + cor que joga |
+| `validateSetupPosition(board, turn)` | `{valid: true}` ou `{valid: false, reason}` |
 
-### Regras completas a implementar
-- Movimentos básicos de cada peça
-- Roque (kingside e queenside) — valida casa de passagem sob ataque
-- En passant — captura do peão que acabou de avançar 2 casas
-- Promoção de peão — escolha de peça via modal
-- Detecção de xeque — filtra moves que deixam o rei em xeque
-- Xeque-mate e empate por afogamento (stalemate)
+### Regras de `createCustomState`
+- `castlingRights` derivados automaticamente: kingside/queenside de uma cor só ficam `true` se o rei e a torre correspondente ainda estão nas casas de origem (e1/h1/a1 brancas, e8/h8/a8 pretas)
+- `enPassantTarget: null`, `halfMoveClock: 0`, `fullMoveNumber: 1`, `history: []`
+- Segue o mesmo padrão de formato/clonagem de `initBoard`/`cloneState`
+
+### Regras de `validateSetupPosition`
+- Exatamente 1 rei branco e 1 rei preto no tabuleiro
+- Nenhum peão na fileira 1 (row 7) ou fileira 8 (row 0)
+- O lado que **não** vai jogar não pode estar em xeque (usa `isInCheck` já existente)
 
 ---
 
-## ui.js — Interface
+## editor.js — Interface do Editor
 
 ### Renderização
-- Tabuleiro: grid 8×8 com `<div>` por casa, cores alternadas via CSS
-- Peças: caracteres Unicode (♙♘♗♖♕♔ / ♟♞♝♜♛♚) inseridos como texto no `<div>` da casa — simples, sem dependências externas, escalável para SVG depois
-- Coordenadas (a-h, 1-8) nas bordas do tabuleiro
+- `renderEditorBoard(board)` — mesma estrutura visual de `.square`/`.piece` do `ui.js` (glifos Unicode, cores claro/escuro), sem highlights de legal-move/xeque
+- Paleta: 12 botões (`.palette-piece`), um por tipo+cor, com o glifo Unicode
 
 ### Interação
-- **Clique 1**: seleciona peça da vez → destaca casa selecionada + mostra casas legais
-- **Clique 2**: se destino legal → executa move; se outra peça da vez → muda seleção; caso contrário → deseleciona
-- Highlight de: casa selecionada (amarelo), movimentos legais (pontos verdes), último movimento (azul claro), rei em xeque (vermelho)
+- Clique numa peça da paleta → seleciona (destaque visual)
+- Clique numa casa do tabuleiro:
+  - com peça selecionada na paleta → coloca/sobrescreve
+  - sem seleção + casa ocupada → remove a peça
+- Seletor "Quem joga": Brancas / Pretas
+- Botões: "Limpar tabuleiro", "Posição Inicial" (via `Engine.initBoard().board`), "Iniciar Partida", "Cancelar"
+- Iniciar Partida chama `Engine.validateSetupPosition`; se inválido, mostra mensagem de erro no painel e não prossegue
 
-### Modal de Promoção
-- Aparece quando peão chega na última fileira
-- Botões: ♕ Rainha · ♖ Torre · ♗ Bispo · ♘ Cavalo
-
-### Painel lateral
-- Indicador de turno ("Vez das Brancas / Pretas")
-- Status do jogo (Xeque! / Xeque-Mate! / Empate)
-- Histórico de jogadas em notação algébrica (SAN)
-- Botão "Nova Partida"
+### API pública
+- `{ init, show, hide, onStartFromPosition }`
+- `show()`/`hide()` alternam a visibilidade do `#setup-panel`, tratados inteiramente dentro de `editor.js`
+- `onStartFromPosition(cb)` — `cb(board, turn)` chamado só após validação bem-sucedida
 
 ---
 
-## main.js — Orquestrador
+## index.html — marcação nova
+
+- Botão "Editar Posição" ao lado de `#new-game-btn`
+- `#setup-panel` (oculto por padrão via classe, mesmo padrão do `.hidden` do overlay de promoção):
+  - Paleta de peças (12 botões com `data-type`/`data-color`)
+  - Seletor de turno (Brancas/Pretas)
+  - Botões de ação (Limpar, Posição Inicial, Iniciar Partida, Cancelar)
+  - Área de mensagem de erro
+
+---
+
+## main.js — Orquestrador (adição)
 
 ```js
-// Fluxo principal
-state = engine.initBoard()
-ui.render(state)
+Editor.init();
 
-ui.onSquareClick((from, to) => {
-  if (to === null) {
-    // seleção
-    moves = engine.getLegalMoves(state, from)
-    ui.highlight(from, moves)
-  } else {
-    // movimento
-    state = engine.applyMove(state, from, to, promotion)
-    ui.render(state)
-    ui.updateStatus(engine.getGameStatus(state))
-  }
-})
+Editor.onStartFromPosition((board, turn) => {
+  state = Engine.createCustomState(board, turn);
+  UI.setLastMove(null, null);
+  UI.resetSelection();
+  UI.render(state);
+});
 ```
 
 ---
 
 ## Verificação (como testar ao final)
 
-1. Abrir `index.html` diretamente no navegador (sem servidor)
-2. Checar cenários:
-   - Peças se movem apenas para casas legais
-   - Roque: rei e torre se posicionam corretamente
-   - En passant: captura funciona no turno imediato após avanço duplo
-   - Promoção: modal aparece, peça correta substitui o peão
-   - Xeque: rei destacado em vermelho, só moves que saem do xeque são permitidos
-   - Xeque-mate: jogo encerra, mensagem exibida (testar com Scholar's Mate: 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6?? 4.Qxf7#)
-   - Stalemate: jogo encerra com empate
-   - Nova partida: reset completo do estado
+1. Abrir editor → paleta aparece, tabuleiro vazio
+2. Colocar os dois reis + peças aleatórias → "Iniciar Partida" funciona e a partida continua normalmente
+3. Tentar iniciar sem os dois reis → bloqueado com mensagem de erro
+4. Tentar iniciar com o lado que não joga em xeque → bloqueado com mensagem de erro
+5. Testar "Limpar tabuleiro" e "Posição Inicial" dentro do editor
+6. Testar "Cancelar" → volta pro jogo sem alterar o `state` atual
+7. Roque só funciona se rei/torre estavam nas casas de origem; en passant não disponível logo após o setup
 
 ---
 
 ## Ordem de Implementação
 
-1. `engine.js` — estado inicial + movimentos básicos (sem regras especiais)
-2. `ui.js` + `index.html` + `css/style.css` — tabuleiro visual e seleção/highlight
-3. `engine.js` — detecção de xeque + filtro de movimentos legais
-4. `engine.js` — roque, en passant, promoção
-5. `engine.js` — xeque-mate e stalemate
-6. `ui.js` — modal de promoção, painel de histórico, mensagens de fim de jogo
+1. `engine.js` — `createEmptyBoard`, `createCustomState`, `validateSetupPosition`
+2. `index.html` + `css/style.css` — botão "Editar Posição", painel `#setup-panel`, paleta, estilos
+3. `editor.js` — renderização do tabuleiro do editor, clique de colocar/remover peça, paleta
+4. `editor.js` — seletor de turno, botões Limpar/Posição Inicial, validação e mensagem de erro
+5. `main.js` — wiring do `Editor.onStartFromPosition`
