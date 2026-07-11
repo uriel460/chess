@@ -295,6 +295,64 @@ const Engine = (() => {
     return ns;
   }
 
+  // ── Setup / custom positions ──────────────────────────────────────────────
+
+  function createEmptyBoard() {
+    return Array(8).fill(null).map(() => Array(8).fill(null));
+  }
+
+  // Builds a full state from an arbitrary board + side to move.
+  // Castling rights are derived from whether the king/rook still sit on
+  // their home squares; en passant and clocks are reset since there is no
+  // prior move to derive them from.
+  function createCustomState(board, turn) {
+    const pieceAt = (r, c, type, color) => {
+      const p = board[r][c];
+      return p !== null && p.type === type && p.color === color;
+    };
+
+    return {
+      board: board.map(row => row.map(cell => cell ? { ...cell } : null)),
+      turn,
+      castlingRights: {
+        white: {
+          kingside:  pieceAt(7, 4, 'king', 'white') && pieceAt(7, 7, 'rook', 'white'),
+          queenside: pieceAt(7, 4, 'king', 'white') && pieceAt(7, 0, 'rook', 'white'),
+        },
+        black: {
+          kingside:  pieceAt(0, 4, 'king', 'black') && pieceAt(0, 7, 'rook', 'black'),
+          queenside: pieceAt(0, 4, 'king', 'black') && pieceAt(0, 0, 'rook', 'black'),
+        },
+      },
+      enPassantTarget: null,
+      halfMoveClock: 0,
+      fullMoveNumber: 1,
+      history: [],
+    };
+  }
+
+  // Checks whether a hand-built board is legal enough to start a game from.
+  function validateSetupPosition(board, turn) {
+    let whiteKings = 0, blackKings = 0;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (!p) continue;
+        if (p.type === 'king') { p.color === 'white' ? whiteKings++ : blackKings++; }
+        if (p.type === 'pawn' && (r === 0 || r === 7))
+          return { valid: false, reason: 'Peão não pode estar na 1ª ou 8ª fileira.' };
+      }
+    }
+    if (whiteKings !== 1 || blackKings !== 1)
+      return { valid: false, reason: 'É preciso haver exatamente um rei branco e um rei preto.' };
+
+    const opponent = turn === 'white' ? 'black' : 'white';
+    if (isInCheck(createCustomState(board, turn), opponent))
+      return { valid: false, reason: 'O lado que não vai jogar não pode estar em xeque.' };
+
+    return { valid: true };
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   return {
@@ -305,6 +363,9 @@ const Engine = (() => {
     isCheckmate,     // (state, color) → bool
     isStalemate,     // (state, color) → bool
     getGameStatus,   // (state) → 'playing'|'check'|'checkmate'|'stalemate'
+    createEmptyBoard,      // () → board
+    createCustomState,     // (board, turn) → state
+    validateSetupPosition, // (board, turn) → {valid, reason?}
   };
 
 })();
