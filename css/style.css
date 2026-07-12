@@ -173,6 +173,41 @@ body {
 
 #history-table tr:hover td { background: #1f3460; }
 
+.history-move { cursor: pointer; }
+
+.history-move.active {
+  background: #1f3460;
+  color: #f6f669;
+  font-weight: 700;
+}
+
+#history-nav {
+  display: flex;
+  gap: 8px;
+}
+
+#undo-btn,
+#redo-btn {
+  flex: 1;
+  padding: 10px;
+  background: #0f3460;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#undo-btn:hover,
+#redo-btn:hover { background: #1a5276; }
+
+#undo-btn:disabled,
+#redo-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 #new-game-btn {
   padding: 10px;
   background: #e74c3c;

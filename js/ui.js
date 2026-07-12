@@ -19,8 +19,11 @@ const UI = (() => {
   const statusEl      = document.getElementById('status-message');
   const historyBody   = document.getElementById('history-body');
   const newGameBtn    = document.getElementById('new-game-btn');
+  const undoBtn       = document.getElementById('undo-btn');
+  const redoBtn       = document.getElementById('redo-btn');
   const promoOverlay  = document.getElementById('promotion-overlay');
   const promoChoices  = document.getElementById('promotion-choices');
+  const setupOverlay  = document.getElementById('setup-overlay');
 
   // ── Internal state ────────────────────────────────────────────────────────
 
@@ -28,6 +31,7 @@ const UI = (() => {
   let legalDests = [];   // [[row,col], ...] for the selected piece
   let lastMove   = null; // { from: [r,c], to: [r,c] }
   let onMoveCb   = null; // callback(from, to, promotion)
+  let onJumpCb   = null; // callback(sanIndex)
 
   // ── Board rendering ───────────────────────────────────────────────────────
 
@@ -198,20 +202,28 @@ const UI = (() => {
     }
   }
 
-  function updateHistory(gameState) {
+  function updateHistory(nav) {
     historyBody.innerHTML = '';
-    const moves = gameState.history;
+    const moves = nav.moves;
+
+    function makeMoveCell(index) {
+      const td = document.createElement('td');
+      td.textContent = moves[index] || '';
+      if (moves[index]) {
+        td.classList.add('history-move');
+        if (index === nav.activeIndex) td.classList.add('active');
+        td.addEventListener('click', () => onJumpCb && onJumpCb(index));
+      }
+      return td;
+    }
+
     for (let i = 0; i < moves.length; i += 2) {
       const tr  = document.createElement('tr');
       const num = document.createElement('td');
-      const w   = document.createElement('td');
-      const b   = document.createElement('td');
       num.textContent = Math.floor(i / 2) + 1 + '.';
-      w.textContent   = moves[i]     || '';
-      b.textContent   = moves[i + 1] || '';
       tr.appendChild(num);
-      tr.appendChild(w);
-      tr.appendChild(b);
+      tr.appendChild(makeMoveCell(i));
+      tr.appendChild(makeMoveCell(i + 1));
       historyBody.appendChild(tr);
     }
     historyBody.scrollTop = historyBody.scrollHeight;
@@ -219,10 +231,12 @@ const UI = (() => {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  function render(gameState) {
+  function render(gameState, nav) {
     renderBoard(gameState);
     updateStatus(gameState);
-    updateHistory(gameState);
+    updateHistory(nav);
+    undoBtn.disabled = !nav.canUndo;
+    redoBtn.disabled = !nav.canRedo;
   }
 
   function setLastMove(from, to) {
@@ -242,10 +256,31 @@ const UI = (() => {
     newGameBtn.addEventListener('click', callback);
   }
 
-  function init() {
-    buildStaticLabels();
+  function onUndo(callback) {
+    undoBtn.addEventListener('click', callback);
   }
 
-  return { init, render, setLastMove, resetSelection, onMove, onNewGame };
+  function onRedo(callback) {
+    redoBtn.addEventListener('click', callback);
+  }
+
+  function onJumpToMove(callback) {
+    onJumpCb = callback;
+  }
+
+  function handleKeydown(e) {
+    if (!promoOverlay.classList.contains('hidden')) return;
+    if (!setupOverlay.classList.contains('hidden')) return;
+
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); undoBtn.click(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); redoBtn.click(); }
+  }
+
+  function init() {
+    buildStaticLabels();
+    document.addEventListener('keydown', handleKeydown);
+  }
+
+  return { init, render, setLastMove, resetSelection, onMove, onNewGame, onUndo, onRedo, onJumpToMove };
 
 })();

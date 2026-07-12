@@ -4,18 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the project
 
-Open `index.html` directly in a browser — no build step, no server, no dependencies. All logic is vanilla JS loaded via `<script>` tags in order: `engine.js` → `ui.js` → `editor.js` → `main.js`.
+Open `index.html` directly in a browser — no build step, no server, no dependencies. All logic is vanilla JS loaded via `<script>` tags in order: `engine.js` → `history.js` → `ui.js` → `editor.js` → `main.js`.
 
 ## Architecture
 
-Four modules with strict layering — `engine.js` has no DOM access, `ui.js` and `editor.js` call Engine but never mutate state directly, `main.js` owns the single mutable `state` reference and wires everything together.
+Five modules with strict layering — `engine.js` and `history.js` have no DOM access, `ui.js` and `editor.js` call Engine but never mutate state directly, `main.js` owns the single mutable `state` reference and wires everything together.
 
 ```
 engine.js  →  pure chess logic, returns new state objects (immutable pattern)
+history.js →  pure undo/redo stack of state snapshots (no DOM, no Engine dependency beyond the state shape)
 ui.js      →  DOM rendering + event handling for normal play, calls Engine for move validation
 editor.js  →  DOM rendering + event handling for the position-setup mode (piece palette, board editing);
               sibling to ui.js — calls Engine directly, never calls into UI, and UI never calls into it
-main.js    →  holds `state`, passes it to UI.render(), handles onMove/onNewGame/Editor.onStartFromPosition callbacks
+main.js    →  holds `state`, passes it + History.nav() to UI.render(), handles onMove/onNewGame/
+              onUndo/onRedo/onJumpToMove/Editor.onStartFromPosition callbacks
 ```
 
 ### Board coordinate system
@@ -45,13 +47,17 @@ State is never mutated — `applyMove` and `applyMoveRaw` always clone via `clon
 - `applyMoveRaw` — low-level board mutation used internally for check detection (skips history/clock updates)
 - `applyMove` — full move application: updates en passant target, castling rights, clocks, SAN history, switches turn
 
+### Key History internals
+
+`History` holds a stack of `{ state, move }` snapshots plus a pointer (`index`). `push` truncates any redo-able future before appending — standard undo/redo semantics. `nav()` returns `{ moves, activeIndex, canUndo, canRedo }` for `UI.render()`, where `moves` is always the full SAN list of the deepest (tip) state, so the history table stays fully visible and clickable even while looking at a past position. `reset()` is called on new game / start-from-position, since neither has a valid "before".
+
 ### UI highlights system
 
 CSS classes added to square `<div>` elements: `selected` (yellow), `legal-move` (green dot), `legal-capture` (green ring), `last-from`/`last-to` (blue), `in-check` (red). The board is fully re-rendered on each `render()` call — no incremental updates.
 
 ### Testing scenarios (manual)
 
-Scholar's Mate tests checkmate path: `1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6?? 4.Qxf7#`. Also verify: en passant (capture only on the immediate next turn), queenside/kingside castling, pawn promotion modal, stalemate detection.
+Scholar's Mate tests checkmate path: `1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6?? 4.Qxf7#`. Also verify: en passant (capture only on the immediate next turn), queenside/kingside castling, pawn promotion modal, stalemate detection, and undo/redo navigation (buttons, ←/→ keys, clicking a move in the history table, and that playing a move after undoing discards the old future).
 
 ---
 
