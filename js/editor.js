@@ -22,6 +22,7 @@ const Editor = (() => {
   const turnBtns     = document.querySelectorAll('.turn-btn');
   const clearBtn     = document.getElementById('clear-board-btn');
   const resetBtn     = document.getElementById('reset-board-btn');
+  const flipBtn      = document.getElementById('flip-editor-board-btn');
   const startBtn     = document.getElementById('start-position-btn');
   const errorEl      = document.getElementById('setup-error');
 
@@ -31,14 +32,18 @@ const Editor = (() => {
   let editorTurn           = 'white';
   let selectedPalettePiece = null; // { type, color } or null
   let onStartCb            = null; // callback(board, turn)
+  let editorFlipped        = false; // board orientation: false = white at bottom
 
   // ── Board rendering ───────────────────────────────────────────────────────
 
   function renderEditorBoard() {
     boardEl.innerHTML = '';
 
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) {
+    for (let screenRow = 0; screenRow < 8; screenRow++) {
+      for (let screenCol = 0; screenCol < 8; screenCol++) {
+        const row = editorFlipped ? 7 - screenRow : screenRow;
+        const col = editorFlipped ? 7 - screenCol : screenCol;
+
         const sq = document.createElement('div');
         sq.className = 'square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
 
@@ -54,6 +59,11 @@ const Editor = (() => {
         boardEl.appendChild(sq);
       }
     }
+  }
+
+  function toggleEditorFlip() {
+    editorFlipped = !editorFlipped;
+    renderEditorBoard();
   }
 
   function handleEditorClick(row, col) {
@@ -172,6 +182,7 @@ const Editor = (() => {
     turnBtns.forEach(btn => btn.addEventListener('click', () => selectTurn(btn.dataset.turn)));
     clearBtn.addEventListener('click', clearBoard);
     resetBtn.addEventListener('click', resetToInitialPosition);
+    flipBtn.addEventListener('click', toggleEditorFlip);
     startBtn.addEventListener('click', handleStart);
   }
 

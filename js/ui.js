@@ -21,6 +21,7 @@ const UI = (() => {
   const newGameBtn    = document.getElementById('new-game-btn');
   const undoBtn       = document.getElementById('undo-btn');
   const redoBtn       = document.getElementById('redo-btn');
+  const flipBoardBtn  = document.getElementById('flip-board-btn');
   const promoOverlay  = document.getElementById('promotion-overlay');
   const promoChoices  = document.getElementById('promotion-choices');
   const setupOverlay  = document.getElementById('setup-overlay');
@@ -32,18 +33,24 @@ const UI = (() => {
   let lastMove   = null; // { from: [r,c], to: [r,c] }
   let onMoveCb   = null; // callback(from, to, promotion)
   let onJumpCb   = null; // callback(sanIndex)
+  let flipped    = false; // board orientation: false = white at bottom
+  let lastGameState = null;
+  let lastNav       = null;
 
   // ── Board rendering ───────────────────────────────────────────────────────
 
-  function buildStaticLabels() {
+  function renderLabels() {
+    rankLabelsEl.innerHTML = '';
+    fileLabelsEl.innerHTML = '';
+
     for (let r = 0; r < 8; r++) {
       const span = document.createElement('span');
-      span.textContent = 8 - r;
+      span.textContent = flipped ? r + 1 : 8 - r;
       rankLabelsEl.appendChild(span);
     }
     for (let c = 0; c < 8; c++) {
       const span = document.createElement('span');
-      span.textContent = 'abcdefgh'[c];
+      span.textContent = flipped ? 'abcdefgh'[7 - c] : 'abcdefgh'[c];
       fileLabelsEl.appendChild(span);
     }
   }
@@ -55,8 +62,11 @@ const UI = (() => {
     const kingPos       = inCheckColor ? findKing(gameState, inCheckColor) : null;
     const legalSet      = new Set(legalDests.map(([r, c]) => `${r},${c}`));
 
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) {
+    for (let screenRow = 0; screenRow < 8; screenRow++) {
+      for (let screenCol = 0; screenCol < 8; screenCol++) {
+        const row = flipped ? 7 - screenRow : screenRow;
+        const col = flipped ? 7 - screenCol : screenCol;
+
         const sq = document.createElement('div');
         sq.className = 'square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
         sq.dataset.row = row;
@@ -232,6 +242,10 @@ const UI = (() => {
   // ── Public API ────────────────────────────────────────────────────────────
 
   function render(gameState, nav) {
+    lastGameState = gameState;
+    lastNav       = nav;
+
+    renderLabels();
     renderBoard(gameState);
     updateStatus(gameState);
     updateHistory(nav);
@@ -276,8 +290,14 @@ const UI = (() => {
     if (e.key === 'ArrowRight') { e.preventDefault(); redoBtn.click(); }
   }
 
+  function toggleFlip() {
+    flipped = !flipped;
+    if (lastGameState) render(lastGameState, lastNav);
+  }
+
   function init() {
-    buildStaticLabels();
+    renderLabels();
+    flipBoardBtn.addEventListener('click', toggleFlip);
     document.addEventListener('keydown', handleKeydown);
   }
 
