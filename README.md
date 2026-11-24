@@ -2,6 +2,8 @@
 
 Jogo de xadrez para dois jogadores no mesmo computador, feito em HTML, CSS e JavaScript puro. Não precisa instalar nada, não tem build e não depende de nenhum servidor: é só abrir no navegador e jogar.
 
+**🎮 Jogue agora: https://uriel460.github.io/chess/**
+
 ## Como jogar
 
 ### Opção 1: baixar e abrir
