@@ -8,7 +8,7 @@ Jogo de xadrez para dois jogadores no mesmo computador, feito em HTML, CSS e Jav
 
 ### Online
 
-Acesse **https://uriel460.github.io/chess/** em qualquer navegador moderno (Chrome, Firefox, Edge, Safari). Não precisa instalar nada.
+Use o link do topo da página. Funciona em qualquer navegador moderno (Chrome, Firefox, Edge, Safari), sem instalar nada.
 
 ### Localmente (offline)
 
