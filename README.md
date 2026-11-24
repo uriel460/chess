@@ -6,26 +6,20 @@ Jogo de xadrez para dois jogadores no mesmo computador, feito em HTML, CSS e Jav
 
 ## Como jogar
 
-### Opção 1: baixar e abrir
+### Online
+
+Acesse **https://uriel460.github.io/chess/** em qualquer navegador moderno (Chrome, Firefox, Edge, Safari). Não precisa instalar nada.
+
+### Localmente (offline)
 
 1. Baixe o projeto:
    ```bash
    git clone https://github.com/uriel460/chess.git
    ```
    Ou, no GitHub, clique em **Code → Download ZIP** e extraia o arquivo.
-2. Abra o arquivo `index.html` em qualquer navegador moderno (Chrome, Firefox, Edge, Safari).
+2. Abra o arquivo `index.html` no navegador.
 
 Pronto, o jogo já está rodando.
-
-### Opção 2: jogar online (GitHub Pages)
-
-Como o projeto é só HTML/CSS/JS estático, dá para publicá-lo de graça pelo GitHub Pages:
-
-1. No repositório do GitHub, vá em **Settings → Pages**.
-2. Em **Source**, escolha **Deploy from a branch**, selecione a branch `main` e a pasta `/ (root)`.
-3. Salve. Em alguns minutos o jogo fica disponível em `https://uriel460.github.io/chess/`.
-
-Depois é só mandar esse link para quem quiser jogar.
 
 ## Funcionalidades
 
